@@ -1,0 +1,5 @@
+.claude/
+.gradle/
+.idea/
+build/
+bin/

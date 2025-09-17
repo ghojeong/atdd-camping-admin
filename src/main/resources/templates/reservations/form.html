@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<body class="bg-gradient" th:replace="~{layout :: layout(~{::section}, '예약 등록/수정')}">
+  <section>
+    <h3>예약 등록/수정</h3>
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">사이트</label>
+        <select class="form-select" name="campsiteId"></select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">체크인</label>
+        <input class="form-control" type="date" name="checkIn" required />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">체크아웃</label>
+        <input class="form-control" type="date" name="checkOut" required />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">상태</label>
+        <select class="form-select" name="status">
+          <option>CONFIRMED</option>
+          <option>CANCELLED</option>
+          <option>CHECKED_IN</option>
+          <option>CHECKED_OUT</option>
+        </select>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">저장</button>
+        <a class="btn btn-secondary" href="/console/reservations">취소</a>
+      </div>
+    </form>
+  </section>
+</body>
+
+

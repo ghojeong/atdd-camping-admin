@@ -1,0 +1,43 @@
+body { font-family: Segoe UI, Tahoma, Geneva, Verdana, sans-serif; }
+.bg-gradient { background: linear-gradient(135deg, #2d6a4f 0%, #52b788 100%); min-height: 100vh; }
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.header { text-align: center; color: white; margin-bottom: 2rem; }
+.card { background: white; border-radius: 15px; padding: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.btn { padding: 0.8rem 2rem; border: none; border-radius: 50px; font-size: 1rem; cursor: pointer; transition: opacity 0.3s; }
+.btn:hover { opacity: 0.9; }
+.btn-primary { background: linear-gradient(135deg, #2d6a4f 0%, #52b788 100%); color: #fff; }
+.btn-secondary { background: #e0e0e0; color: #333; }
+.btn-danger { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: #fff; }
+.btn-small { padding: 0.4rem 1rem; font-size: 0.875rem; }
+input, select { padding: 0.8rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; }
+input:focus, select:focus { border-color: #52b788; outline: none; box-shadow: none; }
+table thead th { background: #f8f9fa; color: #333; }
+table tbody td { color: #666; }
+table tbody tr:hover { background: #f8f9fa; }
+@media (max-width: 768px) { nav a { display: inline-block; margin-bottom: 0.5rem; } }
+
+/* Layout: sidebar + topbar */
+.layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+.sidebar { background: rgba(0,0,0,0.2); backdrop-filter: saturate(120%) blur(2px); color: #fff; padding: 1rem; }
+.brand { padding: 0.5rem 0.75rem; margin-bottom: 1rem; }
+.brand-link { color: #fff; font-weight: 700; text-decoration: none; }
+.menu { display: flex; flex-direction: column; gap: 0.25rem; }
+.menu-item { color: #fff; text-decoration: none; padding: 0.5rem 0.75rem; border-radius: 8px; }
+.menu-item:hover { background: rgba(255,255,255,0.12); }
+.content { display: flex; flex-direction: column; min-width: 0; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; color: #fff; }
+.topbar .right { display: flex; align-items: center; gap: 0.5rem; }
+.topbar .user { font-weight: 600; }
+
+@media (max-width: 992px) {
+  .layout { grid-template-columns: 64px 1fr; }
+  .menu-item { text-indent: -9999px; position: relative; }
+}
+
+/* Compact utilities for revenue summary */
+.card-compact { padding: 0.75rem; }
+.card-compact h6 { margin-bottom: 0.5rem; }
+.table-compact th, .table-compact td { padding: 0.25rem 0.5rem; }
+.chart-compact { max-height: 80px; }
+
+

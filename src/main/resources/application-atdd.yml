@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: camping-admin-service
+
+  datasource:
+    url: jdbc:mysql://atdd-db:3306/atdd?characterEncoding=UTF-8&serverTimezone=UTC&useSSL=false&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: secret
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  sql:
+    init:
+      mode: never
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.camping.admin: DEBUG
+
+jwt:
+  secret: "change-this-dev-secret-key-please"
+  expiration-minutes: 30
+
+admin:
+  username: admin
+  password: admin123

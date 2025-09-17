@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko" th:replace="~{layout :: layout(~{::section}, '대시보드')}">
+  <section>
+    <div class="row g-3">
+      <div class="col-md-3"><div class="card"><h5>오늘 예약</h5><div id="kpi-reservations-today">0</div></div></div>
+      <div class="col-md-3"><div class="card"><h5>오늘 대여</h5><div id="kpi-rentals-today">0</div></div></div>
+      <div class="col-md-3"><div class="card"><h5>오늘 매출(원)</h5><div id="kpi-sales-today">0</div></div></div>
+      <div class="col-md-3"><div class="card"><h5>저재고 상품</h5><div id="kpi-low-stock">0</div></div></div>
+    </div>
+
+    <div class="mt-4 card">
+      <h5>최근 예약</h5>
+      <table class="table">
+        <thead><tr><th>예약ID</th><th>사이트</th><th>상태</th><th>체크인</th><th>체크아웃</th></tr></thead>
+        <tbody id="recent-reservations"><tr><td colspan="5" class="text-center text-muted">데이터 없음</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 card">
+      <h5>최근 판매</h5>
+      <table class="table">
+        <thead><tr><th>거래ID</th><th>항목수</th><th>합계(원)</th><th>일시</th></tr></thead>
+        <tbody id="recent-sales"><tr><td colspan="4" class="text-center text-muted">데이터 없음</td></tr></tbody>
+      </table>
+    </div>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      function setText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      }
+
+      async function loadKpis() {
+        try {
+          // 오늘 매출
+          const revRes = await fetch(`/admin/reports/revenue/daily?date=${todayStr}`, { headers: { 'Accept': 'application/json' }});
+          if (revRes.ok) {
+            const rev = await revRes.json();
+            setText('kpi-sales-today', Number(rev.grandTotalRevenue || 0).toLocaleString());
+          }
+
+          // 오늘 예약 수 (reservationDate 기준)
+          const rsvRes = await fetch('/admin/reservations', { headers: { 'Accept': 'application/json' }});
+          if (rsvRes.ok) {
+            const rsvs = await rsvRes.json();
+            const count = rsvs.filter(r => r.reservationDate === todayStr).length;
+            setText('kpi-reservations-today', String(count));
+            // 최근 예약 테이블 (reservationDate desc, 최대 10개)
+            const sorted = rsvs.sort((a,b) => (b.reservationDate||'').localeCompare(a.reservationDate||''));
+            const tbody = document.getElementById('recent-reservations');
+            tbody.innerHTML = '';
+            (sorted.slice(0,10)).forEach(r => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `<td>${r.id}</td><td>${r.campsiteSiteNumber||''}</td><td>${r.status||''}</td><td>${r.startDate||''}</td><td>${r.endDate||''}</td>`;
+              tbody.appendChild(tr);
+            });
+          }
+
+          // 오늘 대여 수
+          const rentRes = await fetch('/admin/rentals', { headers: { 'Accept': 'application/json' }});
+          if (rentRes.ok) {
+            const rents = await rentRes.json();
+            const count = rents.filter(x => (x.createdAt||'').slice(0,10) === todayStr).length;
+            setText('kpi-rentals-today', String(count));
+          }
+
+          // 저재고 상품 (<=3)
+          const prodRes = await fetch('/admin/products', { headers: { 'Accept': 'application/json' }});
+          if (prodRes.ok) {
+            const prods = await prodRes.json();
+            const low = prods.filter(p => (p.stockQuantity||0) <= 3).length;
+            setText('kpi-low-stock', String(low));
+          }
+        } catch (e) {
+          console.error('대시보드 KPI 로드 실패', e);
+        }
+      }
+
+      async function loadRecentSales() {
+        try {
+          const res = await fetch('/api/sales', { headers: { 'Accept': 'application/json' }});
+          const tbody = document.getElementById('recent-sales');
+          if (!res.ok) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">불러오기 실패</td></tr>'; return; }
+          const sales = await res.json();
+          tbody.innerHTML = '';
+          if (!sales.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">데이터 없음</td></tr>'; return; }
+          sales.forEach(s => {
+            const dt = new Date(s.createdAt);
+            const yyyy = dt.getFullYear();
+            const mm = String(dt.getMonth()+1).padStart(2,'0');
+            const dd = String(dt.getDate()).padStart(2,'0');
+            const hh = String(dt.getHours()).padStart(2,'0');
+            const mi = String(dt.getMinutes()).padStart(2,'0');
+            const formatted = `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${s.id}</td><td>${s.quantity}</td><td>${Number(s.totalPrice||0).toLocaleString()}</td><td>${formatted}</td>`;
+            tbody.appendChild(tr);
+          });
+        } catch (e) {
+          console.error('최근 판매 로드 실패', e);
+        }
+      }
+
+      loadKpis();
+      loadRecentSales();
+    });
+    </script>
+  </section>
+ 
+
+

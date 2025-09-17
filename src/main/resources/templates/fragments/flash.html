@@ -1,0 +1,8 @@
+<div th:fragment="flash">
+  <div th:if="${success}" class="alert alert-success mt-3" th:text="${success}"></div>
+  <div th:if="${error}" class="alert alert-danger mt-3" th:text="${error}"></div>
+  <div th:if="${warning}" class="alert alert-warning mt-3" th:text="${warning}"></div>
+  <div th:if="${info}" class="alert alert-info mt-3" th:text="${info}"></div>
+</div>
+
+

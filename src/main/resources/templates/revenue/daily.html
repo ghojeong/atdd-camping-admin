@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko" th:replace="~{layout :: layout(~{::section}, '일별 매출')}">
+  <section>
+    <!-- 필터 카드 -->
+    <div class="card mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>매출</h3>
+        <button class="btn btn-primary" id="rev-load" type="button">조회</button>
+      </div>
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <input class="form-control" type="date" id="rev-from" />
+        <span>~</span>
+        <input class="form-control" type="date" id="rev-to" />
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-small btn-outline-secondary" data-range="7" type="button">최근 1주</button>
+        <button class="btn btn-small btn-outline-secondary" data-range="30" type="button">최근 1달</button>
+        <button class="btn btn-small btn-outline-secondary" data-range="90" type="button">최근 3달</button>
+      </div>
+    </div>
+
+    <!-- 요약 카드 (컴팩트) -->
+    <div class="card card-compact mb-3">
+      <h4 class="mb-2">요약</h4>
+      <table class="table table-sm table-compact mb-2">
+        <thead><tr><th>항목</th><th>합계(원)</th></tr></thead>
+        <tbody id="rev-table"><tr><td colspan="2" class="text-center text-muted">날짜를 선택하세요</td></tr></tbody>
+      </table>
+<!--      <canvas id="rev-chart" class="chart-compact" height="80"></canvas>-->
+    </div>
+
+    <!-- 목록 카드 -->
+    <div class="card">
+      <h4 class="mb-2">상세 내역</h4>
+      <table class="table table-sm">
+        <thead><tr><th>일시</th><th>유형</th><th>제목</th><th class="text-end">금액(원)</th></tr></thead>
+        <tbody id="rev-entries"><tr><td colspan="4" class="text-center text-muted">날짜를 선택하세요</td></tr></tbody>
+      </table>
+    </div>
+    <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      function formatDateLocal(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      function setDefaultRange() {
+        const to = new Date();
+        const from = new Date();
+        from.setDate(to.getDate() - 6);
+        document.getElementById('rev-to').value = formatDateLocal(to);
+        document.getElementById('rev-from').value = formatDateLocal(from);
+      }
+
+      async function loadRange() {
+        const from = document.getElementById('rev-from').value;
+        const to = document.getElementById('rev-to').value;
+        if (!from || !to) return;
+        console.log('[매출] 조회', { from, to });
+        const tbody = document.getElementById('rev-table');
+        tbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">불러오는 중...</td></tr>';
+        const entriesBody = document.getElementById('rev-entries');
+        entriesBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">불러오는 중...</td></tr>';
+        const loadBtn = document.getElementById('rev-load');
+        loadBtn?.setAttribute('disabled', 'disabled');
+        try {
+          const res = await fetch(`/admin/reports/revenue/range?from=${from}&to=${to}`, { headers: { 'Accept': 'application/json' }});
+          if (!res.ok) { console.warn('매출 조회 실패', res.status); alert('불러오기 실패'); return; }
+          const data = await res.json();
+          tbody.innerHTML = '';
+          const rows = [
+            ['예약 매출', data.totalReservationRevenue],
+            ['판매 매출', data.totalSalesRevenue],
+            ['대여 매출', data.totalRentalRevenue],
+            ['총 매출', data.grandTotalRevenue]
+          ];
+          rows.forEach(r => { const tr = document.createElement('tr'); tr.innerHTML = `<td>${r[0]}</td><td>${Number(r[1]||0).toLocaleString()}</td>`; tbody.appendChild(tr); });
+
+          const res2 = await fetch(`/admin/reports/revenue/range/entries?from=${from}&to=${to}`, { headers: { 'Accept': 'application/json' }});
+          if (!res2.ok) { console.warn('상세 조회 실패', res2.status); entriesBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">상세 불러오기 실패</td></tr>'; return; }
+          const entries = await res2.json();
+          entriesBody.innerHTML = '';
+          if (!entries.length) {
+            entriesBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">상세 내역 없음</td></tr>';
+          } else {
+            entries.forEach(e => {
+              const tr = document.createElement('tr');
+              const dt = new Date(e.occurredAt);
+              const yyyy = dt.getFullYear();
+              const mm = String(dt.getMonth()+1).padStart(2,'0');
+              const dd = String(dt.getDate()).padStart(2,'0');
+              const hh = String(dt.getHours()).padStart(2,'0');
+              const mi = String(dt.getMinutes()).padStart(2,'0');
+              const formatted = `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+              const typeText = e.type === 'RESERVATION' ? '예약' : (e.type === 'RENTAL' ? '대여' : '판매');
+              tr.innerHTML = `<td>${formatted}</td><td>${typeText}</td><td>${e.title}</td><td class="text-end">${Number(e.amount||0).toLocaleString()}</td>`;
+              entriesBody.appendChild(tr);
+            });
+          }
+        } catch (e) {
+          console.error('매출 조회 에러', e);
+          alert('불러오기 실패');
+        } finally {
+          loadBtn?.removeAttribute('disabled');
+        }
+      }
+
+      document.getElementById('rev-load').addEventListener('click', () => {
+        console.log('[매출] 조회 버튼 클릭');
+        loadRange();
+      });
+      document.querySelectorAll('[data-range]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const days = parseInt(btn.getAttribute('data-range'), 10);
+          console.log('[매출] 기간 버튼 클릭', { days });
+          document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const to = new Date();
+          const from = new Date();
+          from.setDate(to.getDate() - (days - 1));
+          document.getElementById('rev-to').value = formatDateLocal(to);
+          document.getElementById('rev-from').value = formatDateLocal(from);
+          loadRange();
+        });
+      });
+
+      setDefaultRange();
+      loadRange();
+    });
+    </script>
+  </section>
+
+
